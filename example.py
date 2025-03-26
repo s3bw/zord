@@ -1,4 +1,5 @@
-from zord import Scene, Square, Indicator, Colour
+from zord import Colour, Indicator, Scene, Square
+
 
 class BinarySearch(Scene):
 
@@ -10,13 +11,13 @@ class BinarySearch(Scene):
         square_size = 40  # Slightly smaller squares for 480p
         for i in range(17):
             s = Square(
-                label=str(i), 
-                x=40 + i*45,  # Adjusted spacing
-                y=self.height//2 - square_size//2,  # Center vertically
-                size=square_size
+                label=str(i),
+                x=40 + i * 45,  # Adjusted spacing
+                y=self.height // 2 - square_size // 2,  # Center vertically
+                size=square_size,
             )
             squares.append(s)
-        
+
         # Create arrow indicator
         arrow = Indicator(size=15)  # Slightly smaller arrow
 
