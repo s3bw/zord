@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List, Optional
 
 from PIL import ImageDraw, ImageFont
 
@@ -37,16 +38,17 @@ class Square:
     size: int = 50
     label: str = ""
     background: str = Colour.WHITE
-    outline: str = Colour.BLACK
+    outline: str = Colour.BASE
     x: float = 0
     y: float = 0
+    radius: int = 3
 
     def get_state(self) -> dict:
-        return {"x": self.x, "y": self.y, "background": self.background}
+        return {"x": self.x, "y": self.y, "background": self.background, "size": self.size}
 
     def interpolate(self, last_state: dict, progress: float) -> "Square":
         return Square(
-            size=self.size,
+            size=int(interpolate_position(last_state["size"], self.size, progress)),
             label=self.label,
             background=interpolate_color(
                 last_state["background"], self.background, progress
@@ -57,8 +59,9 @@ class Square:
         )
 
     def render(self, draw: ImageDraw.Draw) -> None:
-        draw.rectangle(
+        draw.rounded_rectangle(
             [(self.x, self.y), (self.x + self.size, self.y + self.size)],
+            radius=self.radius,
             fill=self.background,
             outline=self.outline,
         )
@@ -70,7 +73,7 @@ class Square:
             draw.text(
                 (self.x + (self.size - w) / 2, self.y + (self.size - h) / 2),
                 self.label,
-                fill=Colour.BLACK,
+                fill=Colour.BASE,
                 font=font,
             )
 
@@ -83,6 +86,7 @@ class Indicator:
     y: float = 0
     target_x: float = 0
     target_y: float = 0
+    fill: str = Colour.BASE
 
     def get_state(self) -> dict:
         return {"x": self.target_x, "y": self.target_y}
@@ -104,4 +108,4 @@ class Indicator:
             (self.x - self.size / 2, self.y - self.size),
             (self.x + self.size / 2, self.y - self.size),
         ]
-        draw.polygon(points, fill=Colour.BLACK)
+        draw.polygon(points, fill=Colour.BASE, outline=Colour.WHITE)

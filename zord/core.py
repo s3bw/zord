@@ -8,11 +8,10 @@ from PIL import Image, ImageDraw
 
 
 class Colour:
-    RED = "#FF0000"
-    BLUE = "#0000FF"
+    PRIMARY = "#FF5858"
+    ACCENT = "#6CFFDD"
+    BASE = "#2A2A2A"
     WHITE = "#FFFFFF"
-    BLACK = "#000000"
-    GRAY = "#E0E0E0"
 
 
 class SceneObject(Protocol):
@@ -52,7 +51,7 @@ def scene_object(cls):
 
 class Scene:
     current_scene = None
-    background = Colour.GRAY
+    background: Colour = None
 
     def __init__(self):
         self.width = 854
@@ -63,35 +62,35 @@ class Scene:
         self.transition_frames = 15
         Scene.current_scene = self
         self._init_frame()
+        self.last_frame_state = {}
+
+    def verticle_center(self, size) -> float:
+        return self.height // 2 - size // 2  # Center verticall
 
     def construct(self):
         """Override this method to create your scene"""
         pass
 
     def _register_object(self, obj: SceneObject) -> None:
-        self._objects[obj._id] = obj
+        if obj._id not in self._objects:
+            self._objects[obj._id] = obj
+            self.last_frame_state[obj._id] = obj.get_state()
 
     def _init_frame(self) -> None:
         # Create frame with background
-        self.current_frame = Image.new('RGBA', (self.width, self.height), 
-                                     (0, 0, 0, 0) if self.background is None else self.background)
+        self.current_frame = Image.new(
+            "RGBA",
+            (self.width, self.height),
+            (0, 0, 0, 0) if self.background is None else self.background,
+        )
         self.draw = ImageDraw.Draw(self.current_frame)
-        
-        # Draw grid lines only if background is not None
-        if self.background is not None:
-            for i in range(0, self.width, 60):
-                self.draw.line([(i, 0), (i, self.height)], fill="#D0D0D0", width=1)
-            for i in range(0, self.height, 60):
-                self.draw.line([(0, i), (self.width, i)], fill="#D0D0D0", width=1)
-        
-        # Render all objects in their current state
-        for obj in self._objects.values():
+
+    def _render_objects(self, objects: List[SceneObject]) -> None:
+        """Render a list of objects to the current frame"""
+        for obj in objects:
             obj.render(self.draw)
 
     def play(self) -> None:
-        if not hasattr(self, "last_frame_state"):
-            self.last_frame_state = {}
-
         # Store current state
         current_state = {}
         for obj in self._objects.values():
@@ -103,11 +102,14 @@ class Scene:
             self._init_frame()
 
             # Interpolate and render objects
+            interpolated_objects = []
             for obj in self._objects.values():
                 last_state = self.last_frame_state.get(obj._id, obj.get_state())
                 interpolated = obj.interpolate(last_state, progress)
-                interpolated.render(self.draw)
+                interpolated_objects.append(interpolated)
 
+            # Render only the interpolated objects
+            self._render_objects(interpolated_objects)
             self.frames.append(self.current_frame.copy())
 
         # Update last frame state
