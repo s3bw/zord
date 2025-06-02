@@ -12,6 +12,7 @@ class Colour:
     ACCENT = "#6CFFDD"
     BASE = "#2A2A2A"
     WHITE = "#FFFFFF"
+    BLACK = "#000000"
 
 
 class SceneObject(Protocol):
@@ -52,20 +53,23 @@ def scene_object(cls):
 class Scene:
     current_scene = None
     background: Colour = None
+    width = 854
+    height = 480
 
     def __init__(self):
-        self.width = 854
-        self.height = 480
         self.frames: List[Image.Image] = []
         self.current_frame = None
         self._objects: Dict[str, SceneObject] = {}
-        self.transition_frames = 15
+        self.transition_frames = 10
         Scene.current_scene = self
         self._init_frame()
         self.last_frame_state = {}
 
     def verticle_center(self, size) -> float:
         return self.height // 2 - size // 2  # Center verticall
+
+    def horizontal_center(self, size) -> float:
+        return self.width // 2 - size // 2
 
     def construct(self):
         """Override this method to create your scene"""
@@ -165,4 +169,5 @@ def load_scene(file_path: str) -> Optional[Scene]:
 
     except Exception as e:
         print(f"Error loading scene: {e}")
+        raise
         return None

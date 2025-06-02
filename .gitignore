@@ -1,0 +1,5 @@
+__pycache__/
+*.gif
+*.egg-info/
+**__pycache__/
+.DS_Store
