@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 class Colour:
     PRIMARY = "#FF5858"
     ACCENT = "#6CFFDD"
+    SHINY = "#ff8000"
     BASE = "#2A2A2A"
     WHITE = "#FFFFFF"
     BLACK = "#000000"
@@ -43,6 +44,7 @@ def scene_object(cls):
         self._id = str(uuid.uuid4())
         self._temporary = kwargs.pop("_temporary", False)
         original_init(self, *args, **kwargs)
+        print(self, "init wrapper")
         if Scene.current_scene is not None and not self._temporary:
             Scene.current_scene._register_object(self)
 

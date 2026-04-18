@@ -3,47 +3,33 @@ from zord import Colour, Indicator, Scene, Square
 
 class BinarySearch(Scene):
 
-    background = None
-
     def construct(self):
         # Create squares in a row
         squares = []
-        square_size = 40  # Slightly smaller squares for 480p
-        for i in range(17):
+        square_size = 60  # Slightly smaller squares for 480p
+        for i in range(13):
             s = Square(
                 label=str(i),
-                x=40 + i * 45,  # Adjusted spacing
-                y=self.height // 2 - square_size // 2,  # Center vertically
+                x=5 + i * 65,  # Adjusted spacing
+                y=self.verticle_center(square_size),
                 size=square_size,
             )
             squares.append(s)
 
         # Create arrow indicator
-        arrow = Indicator(size=15)  # Slightly smaller arrow
+        first_square = squares[0]
+        arrow = Indicator(size=15)  # Create indicator without position
+        arrow.start_at(first_square)  # Position it properly above the first square
+
+        def shift_arr(sqr):
+            sqr.background = Colour.PRIMARY
+            arrow.point_at(sqr)
+            self.play()
+            self.wait(1)
+            sqr.background = Colour.BLACK
 
         # First highlight
-        squares[7].background = Colour.BLUE
-        arrow.point_at(squares[7])
-        self.play()
-        self.wait(1)
-
-        # Second highlight
-        squares[7].background = Colour.GRAY
-        arrow.point_at(squares[13])
-        squares[13].background = Colour.BLUE
-        self.play()
-        self.wait(1)
-
-        # Third highlight
-        squares[13].background = Colour.GRAY
-        arrow.point_at(squares[9])
-        squares[9].background = Colour.BLUE
-        self.play()
-        self.wait(1)
-
-        # Fourth highlight
-        squares[9].background = Colour.GRAY
-        arrow.point_at(squares[10])
-        squares[10].background = Colour.BLUE
-        self.play()
-        self.wait(1)
+        shift_arr(squares[6])
+        shift_arr(squares[10])
+        shift_arr(squares[8])
+        shift_arr(squares[9])

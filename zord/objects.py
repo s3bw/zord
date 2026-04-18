@@ -96,6 +96,7 @@ class Indicator:
     target_x: float = 0
     target_y: float = 0
     fill: str = Colour.BASE
+    # Add font size
     _temporary: bool = True  # Start as temporary
 
     def get_state(self) -> dict:
@@ -130,10 +131,10 @@ class Indicator:
         ]
         draw.polygon(points, fill=Colour.BASE, outline=Colour.WHITE)
         if self.label:
-            font = ImageFont.truetype("Courier", 32)
+            font = ImageFont.truetype("Courier", 28)
             bbox = font.getbbox(self.label)
             h = bbox[3] - bbox[1]
-            x = self.x - (len(self.label) / 2) - 15
+            x = self.x - (len(self.label) / 2) - 8
             y = self.y + (self.size - h - 90) / 2
             outline_width = 2
 
@@ -167,23 +168,15 @@ class Wire:
     _temporary: bool = True
 
     def get_state(self) -> dict:
+        size_x = self.start_object.w
+        size_y = self.start_object.h
+        end_x = self.end_object.w
+        end_y = self.end_object.h
         return {
-            "start_x": (
-                self.start_object.x + self.start_object.size / 2
-                if self.start_object
-                else 0
-            ),
-            "start_y": (
-                self.start_object.y + self.start_object.size / 2
-                if self.start_object
-                else 0
-            ),
-            "end_x": (
-                self.end_object.x + self.end_object.size / 2 if self.end_object else 0
-            ),
-            "end_y": (
-                self.end_object.y + self.end_object.size / 2 if self.end_object else 0
-            ),
+            "start_x": (self.start_object.x + size_x / 2 if self.start_object else 0),
+            "start_y": (self.start_object.y + size_y / 2 if self.start_object else 0),
+            "end_x": (self.end_object.x + end_x / 2 if self.end_object else 0),
+            "end_y": (self.end_object.y + end_y / 2 if self.end_object else 0),
         }
 
     def interpolate(self, last_state: dict, progress: float) -> "Wire":
@@ -206,13 +199,13 @@ class Wire:
 
     def _get_edge_points(self, obj, is_start: bool) -> tuple[float, float]:
         """Calculate the point where the wire should connect to the object's edge"""
-        center_x = obj.x + obj.size / 2
-        center_y = obj.y + obj.size / 2
+        center_x = obj.x + obj.w / 2
+        center_y = obj.y + obj.h / 2
 
         # Get the center point of the other object
         other = self.end_object if is_start else self.start_object
-        other_center_x = other.x + other.size / 2
-        other_center_y = other.y + other.size / 2
+        other_center_x = other.x + other.w / 2
+        other_center_y = other.y + other.h / 2
 
         # Calculate the midpoint for the vertical segment
         mid_x = (center_x + other_center_x) / 2
@@ -222,7 +215,7 @@ class Wire:
             # For start object
             if mid_x > center_x:
                 # Connect to right edge
-                return obj.x + obj.size + 2, center_y
+                return obj.x + obj.w + 2, center_y
             else:
                 # Connect to left edge
                 return obj.x, center_y
@@ -413,7 +406,7 @@ class Text:
             color=self.color,
             outline_color=self.outline_color,
             outline_width=self.outline_width,
-            _temporary=True,
+            _temporary=False,
         )
 
     def render(self, draw: ImageDraw.Draw) -> None:
