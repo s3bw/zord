@@ -42,9 +42,10 @@ def scene_object(cls):
     @wraps(original_init)
     def init_wrapper(self, *args, **kwargs):
         self._id = str(uuid.uuid4())
-        self._temporary = kwargs.pop("_temporary", False)
+        _temporary = kwargs.pop("_temporary", False)
         original_init(self, *args, **kwargs)
-        print(self, "init wrapper")
+        # Set _temporary AFTER original_init so dataclass defaults don't overwrite
+        self._temporary = _temporary
         if Scene.current_scene is not None and not self._temporary:
             Scene.current_scene._register_object(self)
 
@@ -67,8 +68,8 @@ class Scene:
         self._init_frame()
         self.last_frame_state = {}
 
-    def verticle_center(self, size) -> float:
-        return self.height // 2 - size // 2  # Center verticall
+    def vertical_center(self, size) -> float:
+        return self.height // 2 - size // 2  # Center vertically
 
     def horizontal_center(self, size) -> float:
         return self.width // 2 - size // 2
@@ -172,4 +173,3 @@ def load_scene(file_path: str) -> Optional[Scene]:
     except Exception as e:
         print(f"Error loading scene: {e}")
         raise
-        return None

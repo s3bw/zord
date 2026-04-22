@@ -11,7 +11,7 @@ class BinarySearch(Scene):
             s = Square(
                 label=str(i),
                 x=5 + i * 65,  # Adjusted spacing
-                y=self.verticle_center(square_size),
+                y=self.vertical_center(square_size),
                 size=square_size,
             )
             squares.append(s)

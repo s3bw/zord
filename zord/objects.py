@@ -5,6 +5,33 @@ from PIL import ImageDraw, ImageFont
 
 from .core import Colour, Scene, scene_object
 
+# Resolve a monospace font path that works across environments
+_MONO_FONT = None
+
+def _get_mono_font(size: int) -> ImageFont.FreeTypeFont:
+    global _MONO_FONT
+    if _MONO_FONT is None:
+        import shutil, subprocess
+        # Try common monospace font names/paths
+        candidates = [
+            "Courier",
+            "Courier New",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+            "/usr/local/lib/python3.12/dist-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf",
+        ]
+        for c in candidates:
+            try:
+                ImageFont.truetype(c, 28)
+                _MONO_FONT = c
+                break
+            except (OSError, IOError):
+                continue
+        if _MONO_FONT is None:
+            # Last resort: use default
+            _MONO_FONT = ImageFont.load_default()
+            return _MONO_FONT
+    return ImageFont.truetype(_MONO_FONT, size)
+
 
 def interpolate_color(start_color: str, end_color: str, progress: float) -> str:
     """Helper function to interpolate between two colors"""
@@ -38,11 +65,13 @@ class Rect:
     h: int = 50
     w: int = 50
     label: str = ""
+    label_size: int = 28
     background: str = Colour.WHITE
     outline: str = Colour.BASE
     x: float = 0
     y: float = 0
     radius: int = 3
+    label_color: str = None  # Auto-detect from background if None
 
     def get_state(self) -> dict:
         return {
@@ -51,6 +80,7 @@ class Rect:
             "background": self.background,
             "h": self.h,
             "w": self.w,
+            "label_color": self.label_color,
         }
 
     def interpolate(self, last_state: dict, progress: float) -> "Rect":
@@ -63,6 +93,7 @@ class Rect:
             ),
             x=interpolate_position(last_state["x"], self.x, progress),
             y=interpolate_position(last_state["y"], self.y, progress),
+            label_color=self.label_color,
             _temporary=True,
         )
 
@@ -74,14 +105,25 @@ class Rect:
             outline=self.outline,
         )
         if self.label:
-            font = ImageFont.truetype("Courier", 16)
+            font = _get_mono_font(self.label_size)
             bbox = font.getbbox(self.label)
             w = bbox[2] - bbox[0]
             h = bbox[3] - bbox[1]
+            # Determine label color: explicit, or auto-contrast
+            lc = self.label_color
+            if lc is None:
+                # Pick white or dark based on background luminance
+                bg = self.background or "#FFFFFF"
+                if len(bg) >= 7:
+                    r, g, b = int(bg[1:3], 16), int(bg[3:5], 16), int(bg[5:7], 16)
+                    lum = 0.299 * r + 0.587 * g + 0.114 * b
+                    lc = Colour.WHITE if lum < 140 else Colour.BASE
+                else:
+                    lc = Colour.BASE
             draw.text(
                 (self.x + (self.w - w) / 2, self.y + (self.h - h) / 2),
                 self.label,
-                fill=Colour.BASE,
+                fill=lc,
                 font=font,
             )
 
@@ -131,7 +173,7 @@ class Indicator:
         ]
         draw.polygon(points, fill=Colour.BASE, outline=Colour.WHITE)
         if self.label:
-            font = ImageFont.truetype("Courier", 28)
+            font = _get_mono_font(28)
             bbox = font.getbbox(self.label)
             h = bbox[3] - bbox[1]
             x = self.x - (len(self.label) / 2) - 8
@@ -406,11 +448,11 @@ class Text:
             color=self.color,
             outline_color=self.outline_color,
             outline_width=self.outline_width,
-            _temporary=False,
+            _temporary=True,
         )
 
     def render(self, draw: ImageDraw.Draw) -> None:
-        font = ImageFont.truetype("Courier", self.size)
+        font = _get_mono_font(self.size)
 
         # Draw outline by rendering the text multiple times with offsets
         for dx in range(-self.outline_width, self.outline_width + 1):
@@ -425,3 +467,8 @@ class Text:
 
         # Draw the main text on top
         draw.text((self.x, self.y), self.text, fill=self.color, font=font)
+
+
+def Square(size=50, **kwargs):
+    """Convenience factory for creating a square Rect (equal width and height)."""
+    return Rect(h=size, w=size, **kwargs)
